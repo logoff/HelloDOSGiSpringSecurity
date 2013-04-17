@@ -1,40 +1,38 @@
 <beans:beans xmlns="http://www.springframework.org/schema/security"
 	xmlns:beans="http://www.springframework.org/schema/beans"
-	xmlns:jaxrs="http://cxf.apache.org/jaxrs"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:osgi="http://www.springframework.org/schema/osgi"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans 
 					http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
                     http://www.springframework.org/schema/security
                     http://www.springframework.org/schema/security/spring-security-3.0.xsd
-                    http://cxf.apache.org/jaxrs
-                    http://cxf.apache.org/schemas/jaxrs.xsd
                     http://www.springframework.org/schema/osgi
                     http://www.springframework.org/schema/osgi/spring-osgi.xsd
                     ">
- 	
+
 	<!-- Publish myHelloService using Spring DM -->
- 
+
 	<osgi:service interface="com.mytestcompany.sst.HelloService">
 		<osgi:service-properties>
 			<beans:entry key="service.exported.interfaces" value="*" />
 			<beans:entry key="service.exported.configs" value="org.apache.cxf.rs" />
 			<beans:entry key="service.exported.intents" value="HTTP" />
 			<beans:entry key="org.apache.cxf.rs.address" value="/hello" />
-			<beans:entry key="org.apache.cxf.rs.httpservice.context" value="/sample" />
-			<beans:entry key="org.apache.cxf.rs.provider" value="com.mytestcompany.sst.BasicHTTPSpringAuthenticationProvider" />
+			<beans:entry key="org.apache.cxf.rs.httpservice.context"
+				value="/sample" />
+			<beans:entry key="org.apache.cxf.rs.provider"
+				value="com.mytestcompany.sst.BasicHTTPSpringAuthenticationProvider,
+					   com.mytestcompany.sst.BasicExceptionMapper" />
 		</osgi:service-properties>
 		<beans:bean class="com.mytestcompany.sst.HelloServiceImpl" />
 	</osgi:service>
- 
+
 	<!-- Spring Security Context -->
-	
+
 	<!-- To allow standards-based @Secured annotation, enable secured-annotations 
-		See Spring Security 3.1 Reference 2.4 Method Security
-		- http://static.springsource.org/spring-security/site/docs/3.1.x/reference/ns-config.html#ns-protect-pointcut 
+		See Spring Security 3.1 Reference 2.4 Method Security - http://static.springsource.org/spring-security/site/docs/3.1.x/reference/ns-config.html#ns-protect-pointcut 
 		- http://static.springsource.org/spring-security/site/docs/3.1.x/reference/appendix-namespace.html#d0e8651 
-		See Spring Security 3.1 Referecne 15.1.1 Common Built-In Expressions
-		- http://static.springsource.org/spring-security/site/docs/3.1.x/reference/el-access.html -->
+		See Spring Security 3.1 Referecne 15.1.1 Common Built-In Expressions - http://static.springsource.org/spring-security/site/docs/3.1.x/reference/el-access.html -->
 	<global-method-security secured-annotations="enabled" />
 
 	<authentication-manager alias="authenticationManager">
