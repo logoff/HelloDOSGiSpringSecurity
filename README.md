@@ -1,4 +1,4 @@
-HelloOSGiSpringSecurity
+HelloDOSGiSpringSecurity
 =======================
 
 Hello World project using [Spring Security][spring-security] and [Spring DM][spring-dm] as an OSGI bundle.
