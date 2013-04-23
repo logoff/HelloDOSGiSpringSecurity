@@ -85,6 +85,7 @@
 		<beans:property name="accessDecisionManager" ref="accessDecisionManager" />
 		<beans:property name="securityMetadataSource">
 			<filter-security-metadata-source>
+				<intercept-url pattern="/sample/sayBye" access="ROLE_USER" />
 				<!-- Require ROLE_ADMIN in all methods -->
 				<intercept-url pattern="/**" access="ROLE_ADMIN" />
 			</filter-security-metadata-source>

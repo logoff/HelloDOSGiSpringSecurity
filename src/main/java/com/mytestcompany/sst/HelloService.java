@@ -13,4 +13,9 @@ public interface HelloService {
 	@GET
 	@Produces(MediaType.APPLICATION_XML)
 	public String sayHello(@QueryParam("name") String name);
+
+	@Path("/sayBye")
+	@GET
+	@Produces(MediaType.APPLICATION_XML)
+	public String sayBye(@QueryParam("name") String name);
 }
