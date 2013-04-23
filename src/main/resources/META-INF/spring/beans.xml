@@ -1,5 +1,5 @@
 <beans:beans xmlns="http://www.springframework.org/schema/security"
-	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:beans="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:osgi="http://www.springframework.org/schema/osgi"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans 
@@ -20,20 +20,93 @@
 			<beans:entry key="org.apache.cxf.rs.address" value="/hello" />
 			<beans:entry key="org.apache.cxf.rs.httpservice.context"
 				value="/sample" />
-			<beans:entry key="org.apache.cxf.rs.provider"
-				value="com.mytestcompany.sst.BasicHTTPSpringAuthenticationProvider,
-					   com.mytestcompany.sst.BasicExceptionMapper" />
+			<beans:entry key="org.apache.cxf.httpservice.requirefilter"
+				value="true" />
 		</osgi:service-properties>
 		<beans:bean class="com.mytestcompany.sst.HelloServiceImpl" />
 	</osgi:service>
 
 	<!-- Spring Security Context -->
+	<!-- from https://josh.media.berkeley.edu/?p=61 -->
+	<beans:bean id="mySecurityFilterChain"
+		class="org.springframework.security.web.FilterChainProxy">
+		<filter-chain-map path-type="ant">
+			<filter-chain pattern="/**"
+				filters="securityContextPersistenceFilterWithASCFalse,
+				basicAuthenticationFilter,
+				exceptionTranslationFilter,
+				filterSecurityInterceptor" />
+		</filter-chain-map>
+	</beans:bean>
+
+	<!-- Publish the chain as a single Filter in the OSGi service registry, 
+		for DOSGi to register it:
+		See https://cxf.apache.org/distributed-osgi-reference.html#DistributedOSGiReference-ConfigurationProperties -->
+	<osgi:service id="mySecurityFilterChainOsgi" ref="mySecurityFilterChain"
+		interface="javax.servlet.Filter">
+		<osgi:service-properties>
+			<beans:entry key="org.apache.cxf.httpservice.filter"
+				value="true" />
+			<!-- Pax web will pick up this filter, and will complain if no servletNames 
+				or urlPatterns are specified -->
+			<beans:entry key="servletNames" value="none" />
+		</osgi:service-properties>
+	</osgi:service>
+
+	<!-- Define filter beans -->
+
+	<beans:bean id="securityContextPersistenceFilterWithASCFalse"
+		class="org.springframework.security.web.context.SecurityContextPersistenceFilter">
+		<beans:property name='securityContextRepository'>
+			<beans:bean
+				class='org.springframework.security.web.context.HttpSessionSecurityContextRepository'>
+				<beans:property name='allowSessionCreation' value='false' />
+			</beans:bean>
+		</beans:property>
+	</beans:bean>
+
+	<beans:bean id="basicAuthenticationFilter"
+		class="org.springframework.security.web.authentication.www.BasicAuthenticationFilter">
+		<beans:property name="authenticationManager" ref="authenticationManager" />
+		<beans:property name="authenticationEntryPoint" ref="authenticationEntryPoint" />
+	</beans:bean>
+	<beans:bean id="authenticationEntryPoint"
+		class="org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint">
+		<beans:property name="realmName" value="OpenNaaS Application" />
+	</beans:bean>
+	<beans:bean id="exceptionTranslationFilter"
+		class="org.springframework.security.web.access.ExceptionTranslationFilter">
+		<beans:property name="authenticationEntryPoint" ref="authenticationEntryPoint" />
+	</beans:bean>
+
+	<beans:bean id="filterSecurityInterceptor"
+		class="org.springframework.security.web.access.intercept.FilterSecurityInterceptor">
+		<beans:property name="authenticationManager" ref="authenticationManager" />
+		<beans:property name="accessDecisionManager" ref="accessDecisionManager" />
+		<beans:property name="securityMetadataSource">
+			<filter-security-metadata-source>
+				<intercept-url pattern="/sample/sayBye" access="ROLE_USER" />
+				<!-- Require ROLE_ADMIN in all methods -->
+				<intercept-url pattern="/**" access="ROLE_ADMIN" />
+			</filter-security-metadata-source>
+		</beans:property>
+	</beans:bean>
+	<beans:bean id="accessDecisionManager"
+		class="org.springframework.security.access.vote.UnanimousBased">
+		<beans:property name="decisionVoters">
+			<beans:list>
+				<beans:bean class="org.springframework.security.access.vote.RoleVoter" />
+				<beans:bean
+					class="org.springframework.security.access.vote.AuthenticatedVoter" />
+			</beans:list>
+		</beans:property>
+	</beans:bean>
 
 	<!-- To allow standards-based @Secured annotation, enable secured-annotations 
-		See Spring Security 3.1 Reference 2.4 Method Security - http://static.springsource.org/spring-security/site/docs/3.1.x/reference/ns-config.html#ns-protect-pointcut 
-		- http://static.springsource.org/spring-security/site/docs/3.1.x/reference/appendix-namespace.html#d0e8651 
-		See Spring Security 3.1 Referecne 15.1.1 Common Built-In Expressions - http://static.springsource.org/spring-security/site/docs/3.1.x/reference/el-access.html -->
-	<global-method-security secured-annotations="enabled" />
+		See Spring Security 3.0 Reference 2.4 Method Security - http://static.springsource.org/spring-security/site/docs/3.0.x/reference/ns-config.html#ns-protect-pointcut 
+		- http://static.springsource.org/spring-security/site/docs/3.0.x/reference/appendix-namespace.html#d0e8651 
+		See Spring Security 3.0 Reference 15.1.1 Common Built-In Expressions - http://static.springsource.org/spring-security/site/docs/3.0.x/reference/el-access.html -->
+	<!-- <global-method-security secured-annotations="enabled" /> -->
 
 	<authentication-manager alias="authenticationManager">
 		<authentication-provider>
